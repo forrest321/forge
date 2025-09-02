@@ -1,0 +1,12 @@
+0000000000000000000000000000000000000000 4e8feba93d791a605e82513cca631a525e83032a typicalfo <typicalfo@gmail.com> 1756600793 -0400	commit (initial): plan
+4e8feba93d791a605e82513cca631a525e83032a 10d5b4d8acf5063c9bbf1819c4817bdf095ecec1 typicalfo <typicalfo@gmail.com> 1756601823 -0400	commit: init
+10d5b4d8acf5063c9bbf1819c4817bdf095ecec1 e960ae256bab8fb68a748742c84450299559571e typicalfo <typicalfo@gmail.com> 1756601997 -0400	commit: build fix
+e960ae256bab8fb68a748742c84450299559571e dc36d303af5b128856595afb5444a4e26f919541 typicalfo <typicalfo@gmail.com> 1756602831 -0400	commit: grok fast
+dc36d303af5b128856595afb5444a4e26f919541 f04a1c2ecafc29d7ad24806c29b92dc7d481afb2 typicalfo <typicalfo@gmail.com> 1756603122 -0400	commit: readme,makefile
+f04a1c2ecafc29d7ad24806c29b92dc7d481afb2 0bb77bf51425b786657a252d6d8b38a2460789a9 typicalfo <typicalfo@gmail.com> 1756681075 -0400	commit: fixups
+0bb77bf51425b786657a252d6d8b38a2460789a9 f36f6f01e541bc66fa55c3592dc68ed55b034bc7 typicalfo <typicalfo@gmail.com> 1756682851 -0400	commit: fixups, again
+f36f6f01e541bc66fa55c3592dc68ed55b034bc7 42509a1cb0176712c609209ff47caa40a64ff5b7 typicalfo <typicalfo@gmail.com> 1756683044 -0400	commit: pre-debug
+42509a1cb0176712c609209ff47caa40a64ff5b7 6657cde90d9b18f4907b8485cab6bec3f884312a typicalfo <typicalfo@gmail.com> 1756686755 -0400	commit: search. fixes. mcp woes continue
+6657cde90d9b18f4907b8485cab6bec3f884312a 6344052ff446e1a4eac195c231c7abc8bebca8e7 typicalfo <typicalfo@gmail.com> 1756749982 -0400	commit: pre gpt-5 cleanup
+6344052ff446e1a4eac195c231c7abc8bebca8e7 733bbc6911100042c0c3731891472e70f7877daf typicalfo <typicalfo@gmail.com> 1756757011 -0400	commit: mo fixes
+733bbc6911100042c0c3731891472e70f7877daf 8d02ef8811e71845f5f5039243069172d22f6c94 typicalfo <typicalfo@gmail.com> 1756828761 -0400	commit: debugging

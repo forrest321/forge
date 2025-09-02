@@ -1,0 +1,14 @@
+[36mINFO[0m[2025-08-31T20:44:15-04:00] ChromaDB is healthy                           [36mfile[0m=asm_arm64.s [36mfunc[0m=goexit [36mline[0m=1223
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /health                   --> github.com/typicalfo/forge/backend/internal/handlers.(*APIHandlers).Health-fm (3 handlers)
+[GIN-debug] POST   /api/ingest               --> github.com/typicalfo/forge/backend/internal/handlers.(*APIHandlers).Ingest-fm (3 handlers)
+[GIN-debug] POST   /api/search               --> github.com/typicalfo/forge/backend/internal/handlers.(*APIHandlers).Search-fm (3 handlers)
+[36mINFO[0m[2025-08-31T20:44:15-04:00] Starting MCP server                           [36mport[0m=8081
+[36mINFO[0m[2025-08-31T20:44:15-04:00] Starting backend server on :8080...          
+[36mINFO[0m[2025-08-31T20:44:15-04:00] MCP server ready                             
+signal: killed
