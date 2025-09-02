@@ -1,15 +1,13 @@
 module github.com/typicalfo/forge/backend
 
-go 1.23.0
-
-toolchain go1.24.0
+go 1.23
 
 require (
-	github.com/amikos-tech/chroma-go v0.2.4
-	github.com/gin-gonic/gin v1.10.1
-	github.com/modelcontextprotocol/go-sdk v0.3.1
-	github.com/sirupsen/logrus v1.9.3
-	modernc.org/sqlite v1.38.2
+ 	
+ 	github.com/gin-gonic/gin v1.10.1
+ 	github.com/modelcontextprotocol/go-sdk v0.3.1
+ 	github.com/sirupsen/logrus v1.9.3
+ 	modernc.org/sqlite v1.38.2
 )
 
 require (

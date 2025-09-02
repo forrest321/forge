@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	chroma "github.com/amikos-tech/chroma-go/pkg/api/v2"
+	chroma "github.com/forrest321/chroma-go/pkg/api/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/typicalfo/forge/backend/internal/logging"
 )

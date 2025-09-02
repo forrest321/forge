@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	chroma "github.com/amikos-tech/chroma-go/pkg/api/v2"
+	chroma "github.com/forrest321/chroma-go/pkg/api/v2"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/typicalfo/forge/backend/internal/logging"
 	"github.com/typicalfo/forge/backend/internal/services"
