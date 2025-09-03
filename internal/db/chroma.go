@@ -3,121 +3,127 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
 
-	chroma "github.com/forrest321/chroma-go"
-	defaultef "github.com/forrest321/chroma-go/pkg/embeddings/default_ef"
+	chroma "github.com/forrest321/chroma-go/pkg/api/v2"
 )
 
 type ChromaDB struct {
 	client chroma.Client
 }
 
-func NewChromaDB(basePath string) (*ChromaDB, error) {
-	client, err := chroma.NewHTTPClient(chroma.WithBaseURL(basePath))
+// NewChromaDB creates a minimal HTTP client. YAGNI: only base URL support.
+func NewChromaDB(baseURL string) (*ChromaDB, error) {
+	var opts []chroma.ClientOption
+	if baseURL != "" {
+		opts = append(opts, chroma.WithBaseURL(baseURL))
+	}
+	client, err := chroma.NewHTTPClient(opts...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create chroma http client: %w", err)
 	}
 	return &ChromaDB{client: client}, nil
 }
 
-func (db *ChromaDB) Client() chroma.Client {
-	return db.client
-}
+// Close releases underlying resources (e.g., local embedding functions).
+func (c *ChromaDB) Close() error { return c.client.Close() }
 
-func (db *ChromaDB) Health(ctx context.Context) error {
-	return db.client.Heartbeat(ctx)
-}
+// Client exposes the underlying chroma client for services.
+func (c *ChromaDB) Client() chroma.Client { return c.client }
 
-func (db *ChromaDB) GetOrCreateCollection(ctx context.Context, name string) (chroma.Collection, error) {
-	// Try to get existing collection first
-	collection, err := db.client.GetCollection(ctx, name)
-	if err == nil {
-		return collection, nil
-	}
+// Health performs a lightweight heartbeat against the Chroma server.
+func (c *ChromaDB) Health(ctx context.Context) error { return c.client.Heartbeat(ctx) }
 
-	// If collection doesn't exist, create it with default settings
-	return db.CreateCollection(ctx, name, "")
-}
-
-func (db *ChromaDB) CreateCollection(ctx context.Context, name, description string) (chroma.Collection, error) {
-	ef, closeef, efErr := defaultef.NewDefaultEmbeddingFunction()
-
-	// make sure to call this to ensure proper resource release
-	defer func() {
-		err := closeef()
-		if err != nil {
-			fmt.Printf("Error closing default embedding function: %s \n", err)
-		}
-	}()
-	if efErr != nil {
-		fmt.Printf("Error creating OpenAI embedding function: %s \n", efErr)
-	}
-
-	col, err := db.client.GetOrCreateCollection(context.Background(), name,
-		chroma.WithCollectionMetadataCreate(
-			chroma.NewMetadata(
-				chroma.NewStringAttribute("description", description),
-			),
-		),
-		chroma.WithEmbeddingFunctionCreate(ef),
-	)
+// EnsureCollection returns an existing collection or creates it if missing.
+func (c *ChromaDB) EnsureCollection(ctx context.Context, name string) (chroma.Collection, error) {
+	col, err := c.client.GetOrCreateCollection(ctx, name)
 	if err != nil {
-		log.Fatalf("Error creating collection: %s \n", err)
-		return nil, err
+		return nil, fmt.Errorf("ensure collection %q: %w", name, err)
 	}
 	return col, nil
 }
 
-func (db *ChromaDB) DeleteCollection(ctx context.Context, name string) error {
-	return db.client.DeleteCollection(ctx, name)
-}
-
-func (db *ChromaDB) RecreateCollection(ctx context.Context, name string) (chroma.Collection, error) {
-	// Delete existing collection if it exists
-	_ = db.client.DeleteCollection(ctx, name)
-
-	// Create new collection
-	return db.client.CreateCollection(ctx, name)
-}
-
-func (db *ChromaDB) AddDocuments(ctx context.Context, collection chroma.Collection, documents []string, metadatas []map[string]interface{}, ids []string) error {
-	// Convert metadatas to the new format
-	var chromaMetadatas []chroma.DocumentMetadata
-	for _, m := range metadatas {
-		var attributes []*chroma.MetaAttribute
-		for k, v := range m {
-			switch val := v.(type) {
-			case string:
-				attributes = append(attributes, chroma.NewStringAttribute(k, val))
-			case int:
-				attributes = append(attributes, chroma.NewIntAttribute(k, int64(val)))
-			case float64:
-				attributes = append(attributes, chroma.NewFloatAttribute(k, val))
-			}
-		}
-		metadata := chroma.NewDocumentMetadata(attributes...)
-		chromaMetadatas = append(chromaMetadatas, metadata)
+// GetCollection returns an existing collection by name.
+func (c *ChromaDB) GetCollection(ctx context.Context, name string) (chroma.Collection, error) {
+	col, err := c.client.GetCollection(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("get collection %q: %w", name, err)
 	}
-
-	// Convert string IDs to DocumentIDs
-	var docIDs chroma.DocumentIDs
-	for _, id := range ids {
-		docIDs = append(docIDs, chroma.DocumentID(id))
-	}
-
-	return collection.Add(ctx,
-		chroma.WithIDs(docIDs...),
-		chroma.WithTexts(documents...),
-		chroma.WithMetadatas(chromaMetadatas...))
+	return col, nil
 }
 
-func (db *ChromaDB) Query(ctx context.Context, collection chroma.Collection, queryTexts []string, nResults int) (chroma.QueryResult, error) {
-	results, err := collection.Query(ctx,
-		chroma.WithQueryTexts(queryTexts...),
-		chroma.WithNResults(nResults))
+// ListCollections returns all collections.
+func (c *ChromaDB) ListCollections(ctx context.Context) ([]chroma.Collection, error) {
+	cols, err := c.client.ListCollections(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list collections: %w", err)
+	}
+	return cols, nil
+}
+
+// DeleteCollection removes a collection by name.
+func (c *ChromaDB) DeleteCollection(ctx context.Context, name string) error {
+	if err := c.client.DeleteCollection(ctx, name); err != nil {
+		return fmt.Errorf("delete collection %q: %w", name, err)
+	}
+	return nil
+}
+
+// ListDocuments returns all documents in a collection.
+func (c *ChromaDB) ListDocuments(ctx context.Context, collectionName string) (chroma.GetResult, error) {
+	col, err := c.GetCollection(ctx, collectionName)
 	if err != nil {
 		return nil, err
 	}
-	return results, nil
+	res, err := col.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get documents for %q: %w", collectionName, err)
+	}
+	return res, nil
+}
+
+// Search searches documents in a collection with optional k and simple equality filter.
+func (c *ChromaDB) Search(ctx context.Context, collectionName, query string, k int, filter map[string]interface{}) (chroma.QueryResult, error) {
+	col, err := c.GetCollection(ctx, collectionName)
+	if err != nil {
+		return nil, err
+	}
+	var opts []chroma.CollectionQueryOption
+	opts = append(opts, chroma.WithQueryTexts(query))
+	if k > 0 {
+		opts = append(opts, chroma.WithNResults(k))
+	}
+	// Minimal where support: single-key equality like in services.
+	if len(filter) > 0 {
+		var where chroma.WhereFilter
+		for key, v := range filter { // take last entry if multiple, YAGNI
+			switch val := v.(type) {
+			case string:
+				where = chroma.EqString(key, val)
+			case int:
+				where = chroma.EqInt(key, val)
+			case float64:
+				where = chroma.EqFloat(key, float32(val))
+			}
+		}
+		if where != nil {
+			opts = append(opts, chroma.WithWhereQuery(where))
+		}
+	}
+	res, err := col.Query(ctx, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("query collection %q: %w", collectionName, err)
+	}
+	return res, nil
+}
+
+// DeleteDocument deletes a single document by ID in a collection.
+func (c *ChromaDB) DeleteDocument(ctx context.Context, collectionName, id string) error {
+	col, err := c.GetCollection(ctx, collectionName)
+	if err != nil {
+		return err
+	}
+	if err := col.Delete(ctx, chroma.WithIDsDelete(chroma.DocumentID(id))); err != nil {
+		return fmt.Errorf("delete doc %q in %q: %w", id, collectionName, err)
+	}
+	return nil
 }

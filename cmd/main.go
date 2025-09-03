@@ -35,6 +35,11 @@ func main() {
 	if err != nil {
 		logging.GetLogger().WithError(err).Fatal("Failed to initialize Chroma DB")
 	}
+	defer func() {
+		if err := chromaDB.Close(); err != nil {
+			logging.GetLogger().WithError(err).Warn("Error closing ChromaDB client")
+		}
+	}()
 
 	// Sanity check: Heartbeat
 	if err := chromaDB.Health(context.Background()); err != nil {
