@@ -11,6 +11,8 @@ import (
 	"github.com/typicalfo/forge/backend/internal/services"
 )
 
+// MCPServer is a minimal MCP server wrapper.
+// YAGNI: Just what we need to expose search + health.
 type MCPServer struct {
 	chromaDB chroma.Client
 }
@@ -19,35 +21,29 @@ func NewMCPServer(chromaDB chroma.Client) *MCPServer {
 	return &MCPServer{chromaDB: chromaDB}
 }
 
-func (s *MCPServer) Start(port string) {
+// Start runs the MCP server until the provided context is canceled.
+func (s *MCPServer) Start(ctx context.Context, port string) {
 	logging.GetLogger().WithField("port", port).Info("Starting MCP server")
 
-	// Create MCP server using the correct API
 	server := mcp.NewServer(&mcp.Implementation{Name: "Forge MCP Server", Version: "1.0.0"}, nil)
 
-	// Add search tool
 	mcp.AddTool(server, &mcp.Tool{Name: "search", Description: "Search the ingested documents using semantic similarity"}, s.handleSearchFunc())
-
-	// Add health tool
 	mcp.AddTool(server, &mcp.Tool{Name: "health", Description: "Check the health of the ChromaDB connection"}, s.handleHealthFunc())
 
 	logging.GetLogger().Info("MCP server ready")
-	// Run the server over stdin/stdout, until the client disconnects
-	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
+	if err := server.Run(ctx, &mcp.StdioTransport{}); err != nil {
 		logging.GetLogger().WithError(err).Error("MCP server error")
 	}
+	logging.GetLogger().Info("MCP server stopped")
 }
 
 // handleSearchFunc creates a standalone function that can be used with AddTool
 func (s *MCPServer) handleSearchFunc() func(context.Context, *mcp.CallToolRequest, SearchParams) (*mcp.CallToolResult, any, error) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, args SearchParams) (*mcp.CallToolResult, any, error) {
-		// Set default value for K if not provided
 		k := args.K
 		if k == 0 {
 			k = 5
 		}
-
-		// Use the service method which now supports filters
 		service := services.NewIngestService(s.chromaDB)
 		results, err := service.Search(ctx, args.CollectionId, args.Query, k, args.Filter)
 		if err != nil {
@@ -55,7 +51,6 @@ func (s *MCPServer) handleSearchFunc() func(context.Context, *mcp.CallToolReques
 				Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("Search error: %v", err)}},
 			}, nil, nil
 		}
-
 		resultJSON, _ := json.Marshal(results)
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{Text: string(resultJSON)}},
@@ -66,8 +61,7 @@ func (s *MCPServer) handleSearchFunc() func(context.Context, *mcp.CallToolReques
 // handleHealthFunc creates a standalone function that can be used with AddTool
 func (s *MCPServer) handleHealthFunc() func(context.Context, *mcp.CallToolRequest, HealthParams) (*mcp.CallToolResult, any, error) {
 	return func(ctx context.Context, req *mcp.CallToolRequest, args HealthParams) (*mcp.CallToolResult, any, error) {
-		err := s.chromaDB.Heartbeat(ctx)
-		if err != nil {
+		if err := s.chromaDB.Heartbeat(ctx); err != nil {
 			return &mcp.CallToolResult{
 				Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("Health check failed: %v", err)}},
 			}, nil, nil

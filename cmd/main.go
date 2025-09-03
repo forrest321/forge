@@ -90,7 +90,9 @@ func main() {
 
 	// Initialize MCP server (without collection - will handle collections dynamically)
 	mcpServer := mcp.NewMCPServer(chromaDB.Client())
-	go mcpServer.Start(mcpPort)
+	mcpCtx, mcpCancel := context.WithCancel(context.Background())
+	defer mcpCancel()
+	go mcpServer.Start(mcpCtx, mcpPort)
 
 	// Graceful shutdown handling
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -112,6 +114,10 @@ func main() {
 
 	<-ctx.Done()
 	logging.GetLogger().Info("Shutting down backend...")
+
+	// Cancel MCP first, so server.Run exits gracefully
+	stop()
+
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctxShutdown); err != nil {
